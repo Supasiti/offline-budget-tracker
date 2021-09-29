@@ -20,30 +20,26 @@ const populateAll = () => {
 };
 
 // send over the data
-const sendTransaction = (isAdding) => {
+const sendTransaction = async (isAdding) => {
   const transaction = getInputs(isAdding);
   if (!transaction) return;
 
   addTransaction(transaction);
   populateAll();
 
-  api
-    .sendTransaction(transaction)
-    .then((response) => {
-      return response.json();
-    })
-    .then((data) => {
-      if (data.errors) {
-        setError('Missing Information');
-      } else {
-        clearForm();
-      }
-    })
-    .catch((err) => {
-      // fetch failed, so save in indexed db
-      saveRecord(transaction);
+  try {
+    const res = await api.postTransaction(transaction);
+    const data = await res.json();
+    if (data.errors) {
+      setError('Missing Information');
+    } else {
       clearForm();
-    });
+    }
+  } catch (err) {
+    // fetch failed, so save in indexed db
+    saveRecord(transaction);
+    clearForm();
+  }
 };
 
 document.querySelector('#add-btn').onclick = function () {

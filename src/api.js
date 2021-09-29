@@ -15,6 +15,7 @@ const postTransaction = (data) =>
 
 const api = {
   getTransactions,
+  postTransaction,
 };
 
 export default api;
