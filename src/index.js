@@ -4,6 +4,7 @@ import { createChartData } from './chart';
 import { populateTotal, populateTable, populateChart } from './dom';
 import useForm from './form';
 import useTransactions from './transactions';
+import { addServiceWorker } from './serviceWorker';
 
 const { transactions, setTransactions, addTransaction } =
   useTransactions([]);
@@ -54,3 +55,5 @@ api.getTransactions().then((data) => {
   setTransactions(data);
   populateAll();
 });
+
+addServiceWorker();
