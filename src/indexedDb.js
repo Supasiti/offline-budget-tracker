@@ -1,41 +1,106 @@
-// const request = window.indexedDB.open('toDoList', 1);
+import api from './api';
 
-// // Create schema
-// request.onupgradeneeded = (event) => {
-//   const db = event.target.result;
+const openDb = () => {
+  return new Promise((resolve, reject) => {
+    const request = window.indexedDB.open('transactions', 1);
+    request.onsuccess = () => resolve(request);
+    request.onerror = () => reject(request);
+  });
+};
 
-//   // Creates an object store with a listID keypath that can be used to query on.
-//   const toDoListStore = db.createObjectStore('toDoList', {
-//     keyPath: 'listID',
-//   });
-//   // Creates a statusIndex that we can query on.
-//   toDoListStore.createIndex('statusIndex', 'status');
-// };
+const setup = (request) => {
+  const db = request.result;
+  const tx = db.transaction(['transactions'], 'readwrite');
+  const transactionStore = tx.objectStore('transactions');
 
-// // Opens a transaction, accesses the toDoList objectStore and statusIndex.
-// request.onsuccess = () => {
-//   const db = request.result;
-//   const transaction = db.transaction(['toDoList'], 'readwrite');
-//   const toDoListStore = transaction.objectStore('toDoList');
-//   const statusIndex = toDoListStore.index('statusIndex');
+  return { db, tx, transactionStore };
+};
 
-//   // Adds data to our objectStore
-//   toDoListStore.add({ listID: '1', status: 'complete' });
-//   toDoListStore.add({ listID: '2', status: 'in-progress' });
-//   toDoListStore.add({ listID: '3', status: 'in-progress' });
-//   toDoListStore.add({ listID: '4', status: 'backlog' });
+// Creates an object store with a autoincrement keypath
+// if not exist
+const createTransactionTable = (event) => {
+  const db = event.target.result;
+  if (!db.objectStoreNames.contains('transactions')) {
+    db.createObjectStore('transactions', {
+      keyPath: 'id',
+      autoIncrement: true,
+    });
+  }
+};
 
-//   // Opens a Cursor request and iterates over the documents.
-//   const getCursorRequest = toDoListStore.openCursor();
-//   getCursorRequest.onsuccess = (e) => {
-//     const cursor = e.target.result;
-//     if (cursor) {
-//       if (cursor.value.status === 'in-progress') {
-//         const todo = cursor.value;
-//         todo.status = 'complete';
-//         cursor.update(todo);
-//       }
-//       cursor.continue();
-//     }
-//   };
-// };
+// handle add transaction to indexeddb
+const handleAddTransaction = (request, transaction) => {
+  const { transactionStore, tx } = setup(request);
+  transactionStore.add(transaction);
+  window.addEventListener('online', (e) => postTransactions());
+  return tx.complete;
+};
+
+//--------------------------------------------------------------------
+
+// clear transactions
+const handleClearTransactions = (request) => {
+  const { transactionStore, tx } = setup(request);
+  const clearReq = transactionStore.clear();
+  clearReq.onsuccess = () => tx.complete;
+};
+
+// post to transactions api
+const postApiTransactions = async (transactions) => {
+  try {
+    const res = await api.postTransactions(transactions);
+    const data = await res.json();
+    if (!data.errors) {
+      console.log(
+        'Successfully saved offline transactions to the database!',
+      );
+      clearTransactions();
+    } else {
+      throw new Error(data.errors.message);
+    }
+  } catch (err) {
+    console.error(err.message);
+  }
+};
+
+// handle posting transactions
+const handlePostTransactions = (request) => {
+  const { transactionStore } = setup(request);
+  const txReq = transactionStore.getAll();
+  txReq.onsuccess = () => postApiTransactions(txReq.result);
+};
+
+//--------------------------------------
+// create DB and transactions table
+const initTransactionDb = () => {
+  if (!('indexedDB' in window)) {
+    console.log("This browser doesn't support IndexedDB");
+    return;
+  }
+  const request = window.indexedDB.open('transactions', 1);
+  request.onupgradeneeded = createTransactionTable;
+};
+
+// save transaction
+const saveTransaction = async (transaction) => {
+  // const request = window.indexedDB.open('transactions', 1);
+  // request.onsuccess = () =>
+  //   handleAddTransaction(request, transaction);
+
+  const request = await openDb();
+  handleAddTransaction(request, transaction);
+};
+
+// post transactions
+const postTransactions = () => {
+  const request = window.indexedDB.open('transactions', 1);
+  request.onsuccess = () => handlePostTransactions(request);
+};
+
+// clear all transactions
+const clearTransactions = () => {
+  const request = window.indexedDB.open('transactions', 1);
+  request.onsuccess = () => handleClearTransactions(request);
+};
+
+export { initTransactionDb, saveTransaction, postTransactions };

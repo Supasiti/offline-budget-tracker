@@ -3,8 +3,8 @@ const registerWorker = async () => {
     const res = await navigator.serviceWorker.register(
       './service-worker.js',
     );
-    console.log(res);
-    console.log('Service Worker registered successfully.');
+    // console.log(res);
+    // console.log('Service Worker registered successfully.');
   } catch (err) {
     console.log('Service Worker registration failed:', err);
   }

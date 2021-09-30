@@ -13,9 +13,20 @@ const postTransaction = (data) =>
     },
   });
 
+const postTransactions = (data) =>
+  fetch('/api/transaction/bulk', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: {
+      Accept: 'application/json, text/plain, */*',
+      'Content-Type': 'application/json',
+    },
+  });
+
 const api = {
   getTransactions,
   postTransaction,
+  postTransactions,
 };
 
 export default api;

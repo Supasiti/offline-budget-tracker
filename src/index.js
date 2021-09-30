@@ -5,6 +5,7 @@ import { populateTotal, populateTable, populateChart } from './dom';
 import useForm from './form';
 import useTransactions from './transactions';
 import { addServiceWorker } from './serviceWorker';
+import { initTransactionDb, saveTransaction } from './indexedDb';
 
 const { transactions, setTransactions, addTransaction } =
   useTransactions([]);
@@ -38,7 +39,7 @@ const sendTransaction = async (isAdding) => {
     }
   } catch (err) {
     // fetch failed, so save in indexed db
-    saveRecord(transaction);
+    saveTransaction(transaction);
     clearForm();
   }
 };
@@ -57,3 +58,4 @@ api.getTransactions().then((data) => {
 });
 
 addServiceWorker();
+initTransactionDb();
