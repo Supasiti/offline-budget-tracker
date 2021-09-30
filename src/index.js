@@ -38,24 +38,27 @@ const sendTransaction = async (isAdding) => {
       clearForm();
     }
   } catch (err) {
-    // fetch failed, so save in indexed db
     saveTransaction(transaction);
     clearForm();
   }
 };
 
-document.querySelector('#add-btn').onclick = function () {
-  sendTransaction(true);
+const init = () => {
+  document.querySelector('#add-btn').onclick = function () {
+    sendTransaction(true);
+  };
+
+  document.querySelector('#sub-btn').onclick = function () {
+    sendTransaction(false);
+  };
+
+  api.getTransactions().then((data) => {
+    setTransactions(data);
+    populateAll();
+  });
+
+  addServiceWorker();
+  initTransactionDb();
 };
 
-document.querySelector('#sub-btn').onclick = function () {
-  sendTransaction(false);
-};
-
-api.getTransactions().then((data) => {
-  setTransactions(data);
-  populateAll();
-});
-
-addServiceWorker();
-initTransactionDb();
+init();

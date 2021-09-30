@@ -8,7 +8,8 @@ const openDb = () => {
   });
 };
 
-const setup = (request) => {
+const setup = async () => {
+  const request = await openDb();
   const db = request.result;
   const tx = db.transaction(['transactions'], 'readwrite');
   const transactionStore = tx.objectStore('transactions');
@@ -26,23 +27,6 @@ const createTransactionTable = (event) => {
       autoIncrement: true,
     });
   }
-};
-
-// handle add transaction to indexeddb
-const handleAddTransaction = (request, transaction) => {
-  const { transactionStore, tx } = setup(request);
-  transactionStore.add(transaction);
-  window.addEventListener('online', (e) => postTransactions());
-  return tx.complete;
-};
-
-//--------------------------------------------------------------------
-
-// clear transactions
-const handleClearTransactions = (request) => {
-  const { transactionStore, tx } = setup(request);
-  const clearReq = transactionStore.clear();
-  clearReq.onsuccess = () => tx.complete;
 };
 
 // post to transactions api
@@ -63,13 +47,6 @@ const postApiTransactions = async (transactions) => {
   }
 };
 
-// handle posting transactions
-const handlePostTransactions = (request) => {
-  const { transactionStore } = setup(request);
-  const txReq = transactionStore.getAll();
-  txReq.onsuccess = () => postApiTransactions(txReq.result);
-};
-
 //--------------------------------------
 // create DB and transactions table
 const initTransactionDb = () => {
@@ -83,24 +60,24 @@ const initTransactionDb = () => {
 
 // save transaction
 const saveTransaction = async (transaction) => {
-  // const request = window.indexedDB.open('transactions', 1);
-  // request.onsuccess = () =>
-  //   handleAddTransaction(request, transaction);
-
-  const request = await openDb();
-  handleAddTransaction(request, transaction);
+  const { transactionStore, tx } = await setup();
+  transactionStore.add(transaction);
+  window.addEventListener('online', () => postTransactions());
+  return tx.complete;
 };
 
 // post transactions
-const postTransactions = () => {
-  const request = window.indexedDB.open('transactions', 1);
-  request.onsuccess = () => handlePostTransactions(request);
+const postTransactions = async () => {
+  const { transactionStore } = await setup();
+  const txReq = transactionStore.getAll();
+  txReq.onsuccess = () => postApiTransactions(txReq.result);
 };
 
 // clear all transactions
-const clearTransactions = () => {
-  const request = window.indexedDB.open('transactions', 1);
-  request.onsuccess = () => handleClearTransactions(request);
+const clearTransactions = async () => {
+  const { transactionStore, tx } = await setup();
+  const clearReq = transactionStore.clear();
+  clearReq.onsuccess = () => tx.complete;
 };
 
 export { initTransactionDb, saveTransaction, postTransactions };
