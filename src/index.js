@@ -43,6 +43,7 @@ const sendTransaction = async (isAdding) => {
   }
 };
 
+// initiate the page
 const init = () => {
   document.querySelector('#add-btn').onclick = function () {
     sendTransaction(true);
