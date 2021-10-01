@@ -1,10 +1,9 @@
 const express = require('express');
 const logger = require('morgan');
-
 const compression = require('compression');
 const connectDB = require('./db/connection');
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3001;
 
 const app = express();
 
