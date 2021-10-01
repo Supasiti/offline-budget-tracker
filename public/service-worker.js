@@ -42,13 +42,9 @@ const deleteOldCaches = async (currentCaches) => {
 // responses to fetch request
 
 // non GET requests are not cached and
-// requests to other origins are not cached
 // return true if complete
-const handleNoCacheRequest = (event) => {
-  if (
-    event.request.method !== 'GET' ||
-    !FILES_TO_CACHE.includes(event.request.url)
-  ) {
+const handleNonGETRequest = (event) => {
+  if (event.request.method !== 'GET') {
     event.respondWith(fetch(event.request));
     return true;
   }
@@ -114,7 +110,8 @@ self.addEventListener('activate', (event) => {
 
 // listen to fetch event
 self.addEventListener('fetch', (event) => {
-  if (handleNoCacheRequest(event)) return;
+  if (handleNonGETRequest(event)) return;
+
   if (handleTransactionRequest(event)) return;
 
   handleOtherResponse(event);
